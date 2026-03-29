@@ -4,15 +4,9 @@
       "user": {
         "title": "Connect SecureGate",
         "description": "Enter the IP address — rooms are discovered automatically.",
-        "data": {
-          "host": "IP Address",
-          "name": "Name",
-          "scan_interval": "Update interval (seconds)"
-        }
+        "data": {"host": "IP Address", "name": "Name", "scan_interval": "Update interval (seconds)"}
       }
     },
-    "error": {
-      "cannot_connect": "No SecureGate rooms found. Is the system reachable?"
-    }
+    "error": {"cannot_connect": "No SecureGate rooms found."}
   }
 }

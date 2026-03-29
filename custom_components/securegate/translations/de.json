@@ -4,15 +4,9 @@
       "user": {
         "title": "SecureGate verbinden",
         "description": "IP-Adresse eingeben — Räume werden automatisch erkannt.",
-        "data": {
-          "host": "IP-Adresse",
-          "name": "Name",
-          "scan_interval": "Aktualisierung (Sekunden)"
-        }
+        "data": {"host": "IP-Adresse", "name": "Name", "scan_interval": "Aktualisierung (Sekunden)"}
       }
     },
-    "error": {
-      "cannot_connect": "Keine SecureGate Räume gefunden. Ist das System erreichbar?"
-    }
+    "error": {"cannot_connect": "Keine SecureGate Räume gefunden."}
   }
 }

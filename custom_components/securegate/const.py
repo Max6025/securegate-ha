@@ -1,4 +1,4 @@
-"""Constants for SecureGate integration."""
+"""Constants for SecureGate integration v3."""
 DOMAIN = "securegate"
 CONF_HOST = "host"
 CONF_NAME = "name"
