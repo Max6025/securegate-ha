@@ -3,17 +3,16 @@
     "step": {
       "user": {
         "title": "Connect SecureGate",
-        "description": "Enter the IP address of your SecureGate system.",
+        "description": "Enter the IP address — rooms are discovered automatically.",
         "data": {
           "host": "IP Address",
-          "port": "Port",
           "name": "Name",
           "scan_interval": "Update interval (seconds)"
         }
       }
     },
     "error": {
-      "cannot_connect": "Connection failed — is SecureGate reachable?"
+      "cannot_connect": "No SecureGate rooms found. Is the system reachable?"
     }
   }
 }

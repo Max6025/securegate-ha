@@ -3,17 +3,16 @@
     "step": {
       "user": {
         "title": "SecureGate verbinden",
-        "description": "Gib die IP-Adresse deines SecureGate Systems ein.",
+        "description": "IP-Adresse eingeben — Räume werden automatisch erkannt.",
         "data": {
           "host": "IP-Adresse",
-          "port": "Port",
           "name": "Name",
-          "scan_interval": "Aktualisierungsintervall (Sekunden)"
+          "scan_interval": "Aktualisierung (Sekunden)"
         }
       }
     },
     "error": {
-      "cannot_connect": "Verbindung fehlgeschlagen — ist SecureGate erreichbar?"
+      "cannot_connect": "Keine SecureGate Räume gefunden. Ist das System erreichbar?"
     }
   }
 }

@@ -1,100 +1,157 @@
-"""Binary sensor platform for SecureGate."""
+"""Binary sensors for SecureGate — Multi-Room."""
 from __future__ import annotations
-
 from homeassistant.components.binary_sensor import BinarySensorEntity, BinarySensorDeviceClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-
-from .const import DOMAIN, CONF_NAME, DEFAULT_NAME
+from .const import DOMAIN
 from .coordinator import SecureGateCoordinator
+from .sensor import _device_info_room, _device_info_admin
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
-    """Set up binary sensors."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
-    name = entry.data.get(CONF_NAME, DEFAULT_NAME)
-    port = entry.data.get("port", 5000)
+    rooms = entry.data.get("rooms", [])
+    entities = []
+    for room in rooms:
+        p, n = room["port"], room["name"]
+        entities.extend([
+            RoomBinary(coordinator, p, n, "locked", "mdi:lock", "system_locked", BinarySensorDeviceClass.LOCK),
+            RoomBinary(coordinator, p, n, "maintenance", "mdi:wrench", "maintenance_mode"),
+            RoomBinary(coordinator, p, n, "master_mode", "mdi:star", "master_mode"),
+            RoomBinary(coordinator, p, n, "card_stuck", "mdi:credit-card-alert", "card_stuck", BinarySensorDeviceClass.PROBLEM),
+            RoomBinary(coordinator, p, n, "reader_error", "mdi:alert-circle", "reader_error", BinarySensorDeviceClass.PROBLEM),
+            RoomBinary(coordinator, p, n, "invalid_card", "mdi:credit-card-off", "invalid_card_active", BinarySensorDeviceClass.PROBLEM),
+            RoomOnlineBinary(coordinator, p, n),
+            RoomAccessClosedBinary(coordinator, p, n),
+        ])
+    # Admin
+    entities.append(AdminAllOnline(coordinator, rooms))
+    entities.append(AdminAnyLocked(coordinator))
+    entities.append(AdminAnyMaintenance(coordinator))
+    async_add_entities(entities)
 
-    async_add_entities([
-        SecureGateLocked(coordinator, entry, name, port),
-        SecureGateMaintenance(coordinator, entry, name, port),
-        SecureGateCardStuck(coordinator, entry, name, port),
-        SecureGateReaderError(coordinator, entry, name, port),
-    ])
 
-
-class SecureGateBinaryBase(CoordinatorEntity[SecureGateCoordinator], BinarySensorEntity):
-    """Base binary sensor."""
-
-    def __init__(self, coordinator, entry, name, port, key, icon, device_class=None):
+class RoomBinary(CoordinatorEntity[SecureGateCoordinator], BinarySensorEntity):
+    def __init__(self, coordinator, port, room_name, key, icon, data_key, device_class=None):
         super().__init__(coordinator)
-        self._attr_unique_id = f"securegate_{port}_{key}"
-        self._attr_name = f"{name} {key.replace('_', ' ').title()}"
+        self._port = port
+        self._room_name = room_name
+        self._data_key = data_key
+        self._attr_unique_id = f"sg_{port}_{key}"
+        self._attr_name = f"{room_name} {key.replace('_', ' ').title()}"
         self._attr_icon = icon
         self._attr_device_class = device_class
-        self._entry = entry
 
     @property
     def device_info(self):
-        return {
-            "identifiers": {(DOMAIN, f"{self.coordinator.host}:{self.coordinator.port}")},
-            "name": self._entry.data.get(CONF_NAME, DEFAULT_NAME),
-            "manufacturer": "SecureGate",
-            "model": "NFC Access Control",
-        }
-
-
-class SecureGateLocked(SecureGateBinaryBase):
-    """System locked binary sensor."""
-
-    def __init__(self, coordinator, entry, name, port):
-        super().__init__(coordinator, entry, name, port, "locked", "mdi:lock", BinarySensorDeviceClass.LOCK)
+        return _device_info_room(self.coordinator, self._port, self._room_name)
 
     @property
     def is_on(self):
-        return self.coordinator.data.get("system_locked", False)
+        return self.coordinator.data.get("rooms", {}).get(self._port, {}).get(self._data_key, False)
+
+    @property
+    def available(self):
+        return self.coordinator.data.get("rooms", {}).get(self._port, {}).get("_online", False)
 
 
-class SecureGateMaintenance(SecureGateBinaryBase):
-    """Maintenance mode binary sensor."""
+class RoomOnlineBinary(CoordinatorEntity[SecureGateCoordinator], BinarySensorEntity):
+    def __init__(self, coordinator, port, room_name):
+        super().__init__(coordinator)
+        self._port = port
+        self._room_name = room_name
+        self._attr_unique_id = f"sg_{port}_online"
+        self._attr_name = f"{room_name} Online"
+        self._attr_icon = "mdi:access-point-check"
+        self._attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
 
-    def __init__(self, coordinator, entry, name, port):
-        super().__init__(coordinator, entry, name, port, "maintenance", "mdi:wrench")
+    @property
+    def device_info(self):
+        return _device_info_room(self.coordinator, self._port, self._room_name)
 
     @property
     def is_on(self):
-        return self.coordinator.data.get("maintenance_mode", False)
+        return self.coordinator.data.get("rooms", {}).get(self._port, {}).get("_online", False)
+
+
+class RoomAccessClosedBinary(CoordinatorEntity[SecureGateCoordinator], BinarySensorEntity):
+    def __init__(self, coordinator, port, room_name):
+        super().__init__(coordinator)
+        self._port = port
+        self._room_name = room_name
+        self._attr_unique_id = f"sg_{port}_access_closed"
+        self._attr_name = f"{room_name} Zugang Geschlossen"
+        self._attr_icon = "mdi:door-closed-lock"
+
+    @property
+    def device_info(self):
+        return _device_info_room(self.coordinator, self._port, self._room_name)
+
+    @property
+    def is_on(self):
+        r = self.coordinator.data.get("rooms", {}).get(self._port, {})
+        return r.get("_config", {}).get("access_closed", False)
 
     @property
     def extra_state_attributes(self):
-        d = self.coordinator.data
-        if d.get("maintenance_mode"):
-            return {
-                "message": d.get("maintenance_msg", ""),
-                "remaining_seconds": d.get("maintenance_remain", 0),
-            }
-        return {}
+        r = self.coordinator.data.get("rooms", {}).get(self._port, {})
+        cfg = r.get("_config", {})
+        return {"reason": cfg.get("access_reason", "")}
+
+    @property
+    def available(self):
+        return self.coordinator.data.get("rooms", {}).get(self._port, {}).get("_online", False)
 
 
-class SecureGateCardStuck(SecureGateBinaryBase):
-    """Card stuck warning."""
+# Admin binary sensors
+class AdminAllOnline(CoordinatorEntity[SecureGateCoordinator], BinarySensorEntity):
+    def __init__(self, coordinator, rooms):
+        super().__init__(coordinator)
+        self._rooms = rooms
+        self._attr_unique_id = "sg_admin_all_online"
+        self._attr_name = "SecureGate Alle Online"
+        self._attr_icon = "mdi:check-network"
+        self._attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
 
-    def __init__(self, coordinator, entry, name, port):
-        super().__init__(coordinator, entry, name, port, "card_stuck", "mdi:credit-card-alert", BinarySensorDeviceClass.PROBLEM)
+    @property
+    def device_info(self):
+        return _device_info_admin(self.coordinator)
 
     @property
     def is_on(self):
-        return self.coordinator.data.get("card_stuck", False)
+        a = self.coordinator.data.get("admin", {})
+        return a.get("rooms_online", 0) == a.get("rooms_total", 0) and a.get("rooms_total", 0) > 0
 
 
-class SecureGateReaderError(SecureGateBinaryBase):
-    """Reader error."""
+class AdminAnyLocked(CoordinatorEntity[SecureGateCoordinator], BinarySensorEntity):
+    def __init__(self, coordinator):
+        super().__init__(coordinator)
+        self._attr_unique_id = "sg_admin_any_locked"
+        self._attr_name = "SecureGate Lockdown Aktiv"
+        self._attr_icon = "mdi:lock-alert"
 
-    def __init__(self, coordinator, entry, name, port):
-        super().__init__(coordinator, entry, name, port, "reader_error", "mdi:alert-circle", BinarySensorDeviceClass.PROBLEM)
+    @property
+    def device_info(self):
+        return _device_info_admin(self.coordinator)
 
     @property
     def is_on(self):
-        return self.coordinator.data.get("reader_error", False)
+        return self.coordinator.data.get("admin", {}).get("rooms_locked", 0) > 0
+
+
+class AdminAnyMaintenance(CoordinatorEntity[SecureGateCoordinator], BinarySensorEntity):
+    def __init__(self, coordinator):
+        super().__init__(coordinator)
+        self._attr_unique_id = "sg_admin_any_maintenance"
+        self._attr_name = "SecureGate Wartung Aktiv"
+        self._attr_icon = "mdi:wrench-cog"
+
+    @property
+    def device_info(self):
+        return _device_info_admin(self.coordinator)
+
+    @property
+    def is_on(self):
+        return self.coordinator.data.get("admin", {}).get("rooms_maintenance", 0) > 0

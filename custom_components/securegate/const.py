@@ -1,21 +1,7 @@
 """Constants for SecureGate integration."""
 DOMAIN = "securegate"
 CONF_HOST = "host"
-CONF_PORT = "port"
 CONF_NAME = "name"
 CONF_SCAN_INTERVAL = "scan_interval"
-DEFAULT_PORT = 5000
 DEFAULT_NAME = "SecureGate"
 DEFAULT_SCAN_INTERVAL = 10
-
-ATTR_ACTIVE_USERS = "active_users"
-ATTR_ACTIVE_GUESTS = "active_guests"
-ATTR_TODAY_TOTAL = "today_total"
-ATTR_BROADCAST = "broadcast"
-ATTR_BROADCAST_TYPE = "broadcast_type"
-ATTR_SYSTEM_MSG = "system_msg"
-ATTR_MAINTENANCE_MODE = "maintenance_mode"
-ATTR_MAINTENANCE_MSG = "maintenance_msg"
-ATTR_SYSTEM_LOCKED = "system_locked"
-ATTR_CARD_STUCK = "card_stuck"
-ATTR_READER_ERROR = "reader_error"

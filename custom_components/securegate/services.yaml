@@ -1,6 +1,6 @@
 broadcast:
   name: Broadcast senden
-  description: Sendet einen Broadcast an alle SecureGate Dashboards.
+  description: Sendet einen Broadcast an SecureGate Dashboards.
   fields:
     message:
       name: Nachricht
@@ -11,7 +11,6 @@ broadcast:
         text:
     type:
       name: Typ
-      description: Broadcast-Typ
       required: false
       default: "info"
       selector:
@@ -23,17 +22,35 @@ broadcast:
             - "alarm"
     duration:
       name: Dauer (Sekunden)
-      description: Wie lange der Broadcast angezeigt wird
       required: false
       default: 300
       selector:
         number:
           min: 10
           max: 3600
+    port:
+      name: Raum-Port
+      description: "0 = alle Räume, oder z.B. 5000 für einen bestimmten Raum"
+      required: false
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 5900
 
 kick_all:
   name: Alle auschecken
   description: Checkt alle aktiven User aus.
+  fields:
+    port:
+      name: Raum-Port
+      description: "0 = alle Räume"
+      required: false
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 5900
 
 cmd:
   name: Kommando senden
@@ -41,8 +58,49 @@ cmd:
   fields:
     command:
       name: Befehl
-      description: "z.B. lock, unlock, maintenance 30m, status"
+      description: "z.B. lock, unlock, maintenance 30m, kick all"
       required: true
       example: "maintenance 30m"
       selector:
         text:
+    port:
+      name: Raum-Port
+      description: "0 = alle Räume"
+      required: false
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 5900
+
+lockdown_all:
+  name: Alle Räume sperren
+  description: Aktiviert Lockdown in allen Räumen.
+
+unlock_all:
+  name: Alle Räume entsperren
+  description: Deaktiviert Lockdown in allen Räumen.
+
+maintenance_all:
+  name: Wartung alle Räume
+  description: Aktiviert Wartungsmodus in allen Räumen.
+  fields:
+    duration:
+      name: Dauer (Sekunden)
+      description: "0 = dauerhaft"
+      required: false
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 86400
+    message:
+      name: Nachricht
+      required: false
+      default: "Wartungsmodus via Home Assistant"
+      selector:
+        text:
+
+maintenance_off_all:
+  name: Wartung alle aus
+  description: Deaktiviert Wartungsmodus in allen Räumen.
