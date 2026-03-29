@@ -1,0 +1,48 @@
+broadcast:
+  name: Broadcast senden
+  description: Sendet einen Broadcast an alle SecureGate Dashboards.
+  fields:
+    message:
+      name: Nachricht
+      description: Der Broadcast-Text
+      required: true
+      example: "Feueralarm — Gebäude verlassen!"
+      selector:
+        text:
+    type:
+      name: Typ
+      description: Broadcast-Typ
+      required: false
+      default: "info"
+      selector:
+        select:
+          options:
+            - "info"
+            - "warnung"
+            - "erfolg"
+            - "alarm"
+    duration:
+      name: Dauer (Sekunden)
+      description: Wie lange der Broadcast angezeigt wird
+      required: false
+      default: 300
+      selector:
+        number:
+          min: 10
+          max: 3600
+
+kick_all:
+  name: Alle auschecken
+  description: Checkt alle aktiven User aus.
+
+cmd:
+  name: Kommando senden
+  description: Sendet einen Befehl an die SecureGate Konsole.
+  fields:
+    command:
+      name: Befehl
+      description: "z.B. lock, unlock, maintenance 30m, status"
+      required: true
+      example: "maintenance 30m"
+      selector:
+        text:
